@@ -36,9 +36,11 @@ class PostsURLTests(TestCase):
 
         cls.user_follower = User.objects.create_user(username='user_follower')
 
-        cls.user_not_follower = User.objects.create_user(username='user_not_follower')
+        cls.user_not_follower = User.objects.create_user(
+            username='user_not_follower'
+        )
 
-        Follow.objects.create(user = cls.user_follower, author = cls.user)
+        Follow.objects.create(user=cls.user_follower, author=cls.user)
 
         cls.group = Group.objects.create(
             title='Тестовая группа',
@@ -90,7 +92,7 @@ class PostsURLTests(TestCase):
             cls.url_group_list,
             cls.url_profile,
             cls.url_post_detail,
-            cls.url_follow_index 
+            cls.url_follow_index
         ]
 
         cls.pages_with_paginator = [
@@ -107,7 +109,7 @@ class PostsURLTests(TestCase):
             (cls.url_post_detail, 'posts/post_detail.html'),
             (cls.url_post_create, 'posts/create_post.html'),
             (cls.url_post_edit, 'posts/create_post.html'),
-            (cls.url_follow_index , 'posts/follow.html')
+            (cls.url_follow_index, 'posts/follow.html')
         ]
 
     @classmethod
@@ -117,7 +119,7 @@ class PostsURLTests(TestCase):
 
     def setUp(self):
         cache.clear()
-        
+
         self.authorized_client = Client()
         self.authorized_client.force_login(PostsURLTests.user)
 
@@ -191,8 +193,8 @@ class PostsURLTests(TestCase):
         response = self.authorized_client.get(PostsURLTests.url_index)
 
         obj_before_del = response.context['page_obj'][0]
-        Post.objects.filter(id = obj_before_del.id).delete()
-     
+        Post.objects.filter(id=obj_before_del.id).delete()
+
         response = self.authorized_client.get(PostsURLTests.url_index)
         obj_after_del = response.context['page_obj'][0]
         self.assertEqual(obj_before_del, obj_after_del)
@@ -208,8 +210,8 @@ class PostsURLTests(TestCase):
         self.assertEqual(
             len(
                 Follow.objects.filter(
-                    user = PostsURLTests.user_not_follower,
-                    author = PostsURLTests.user
+                    user=PostsURLTests.user_not_follower,
+                    author=PostsURLTests.user
                 )
             ), 1
         )
@@ -218,8 +220,8 @@ class PostsURLTests(TestCase):
         self.assertNotEqual(
             len(
                 Follow.objects.filter(
-                    user = PostsURLTests.user_not_follower,
-                    author = PostsURLTests.user
+                    user=PostsURLTests.user_not_follower,
+                    author=PostsURLTests.user
                 )
             ), 1
         )

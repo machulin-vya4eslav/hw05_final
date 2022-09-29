@@ -49,8 +49,8 @@ def profile(request, username):
     author_post_list = author.posts.all()
     page_obj = get_page_context(author_post_list, request)
     following = (
-        request.user.is_authenticated and 
-        Follow.objects.filter(user=request.user, author=author).exists()
+        request.user.is_authenticated
+        and Follow.objects.filter(user=request.user, author=author).exists()
     )
 
     template = 'posts/profile.html'
@@ -163,4 +163,3 @@ def profile_unfollow(request, username):
         ).delete()
         return redirect('posts:profile', username)
     return redirect('posts:profile', username)
-
