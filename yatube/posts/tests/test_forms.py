@@ -1,9 +1,11 @@
 import shutil
 import tempfile
+
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
+
 from ..models import Post, Group, Comment, User
 
 
@@ -66,6 +68,7 @@ class PostCreateFormTests(TestCase):
             Post.objects.filter(
                 text=form_data['text'],
                 group=form_data['group'],
+                image=form_data['image']
             ).exists
         )
 

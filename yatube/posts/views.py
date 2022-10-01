@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.core.cache import cache
+from django.views.decorators.cache import cache_page
+
 from .models import Post, Group, User, Follow
 from .forms import PostForm, CommentForm
 from .utils import get_page_context
@@ -9,58 +10,46 @@ from .utils import get_page_context
 TIME_OF_CACHE = 20
 
 
+@cache_page(20, key_prefix='index_page')
 def index(request):
-    title = 'Последние обновления на сайте'
-
     post_list = Post.objects.all()
     page_obj = get_page_context(post_list, request)
-    template = 'posts/index.html'
     context = {
         'page_obj': page_obj,
-        'title': title
+        'title': 'Последние обновления на сайте'
     }
-
-    if not cache.get('index_page'):
-        cache.set('index_page', context, TIME_OF_CACHE)
-    else:
-        context = cache.get('index_page')
-
-    return render(request, template, context)
+    return render(request, 'posts/index.html', context)
 
 
 def group_posts(request, slug):
     group = get_object_or_404(Group, slug=slug)
-    title = f'Записи сообщества {group}'
     group_post_list = group.posts.all()
     page_obj = get_page_context(group_post_list, request)
-
-    template = 'posts/group_list.html'
     context = {
         'group': group,
-        'title': title,
+        'title': f'Записи сообщества {group}',
         'page_obj': page_obj,
     }
-    return render(request, template, context)
+    return render(request, 'posts/group_list.html', context)
 
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    title = f'Профайл пользователя {author.get_full_name()}'
     author_post_list = author.posts.all()
     page_obj = get_page_context(author_post_list, request)
-    following = (
-        request.user.is_authenticated
-        and Follow.objects.filter(user=request.user, author=author).exists()
-    )
 
-    template = 'posts/profile.html'
     context = {
-        'title': title,
+        'title': f'Профайл пользователя {author.get_full_name()}',
         'page_obj': page_obj,
-        'author': author,
-        'following': following
+        'author': author
     }
-    return render(request, template, context)
+
+    if request.user.is_authenticated:
+        context.update(
+            following=Follow.objects.filter(user=request.user, author=author)
+        )
+
+    return render(request, 'posts/profile.html', context)
 
 
 def post_detail(request, post_id):
@@ -69,13 +58,12 @@ def post_detail(request, post_id):
 
     form = CommentForm()
 
-    template = 'posts/post_detail.html'
     context = {
         'post': post,
         'comments': comments,
         'form': form
     }
-    return render(request, template, context)
+    return render(request, 'posts/post_detail.html', context)
 
 
 @login_required
@@ -101,12 +89,11 @@ def post_create(request):
         post.save()
         return redirect('posts:profile', request.user)
 
-    template = 'posts/create_post.html'
     context = {
         'form': form,
         'is_edit': is_edit
     }
-    return render(request, template, context)
+    return render(request, 'posts/create_post.html', context)
 
 
 @login_required
@@ -119,20 +106,21 @@ def post_edit(request, post_id):
     form = PostForm(
         request.POST or None,
         files=request.FILES or None,
-        instance=post)
+        instance=post
+    )
+
     if form.is_valid():
         post = form.save(commit=False)
         post.author = request.user
         post.save()
         return redirect('posts:post_detail', post_id)
 
-    template = 'posts/create_post.html'
     context = {
         'form': form,
         'is_edit': is_edit,
         'post': post
     }
-    return render(request, template, context)
+    return render(request, 'posts/create_post.html', context)
 
 
 @login_required
@@ -150,7 +138,6 @@ def profile_follow(request, username):
             user=request.user,
             author=User.objects.get(username=username)
         )
-        return redirect('posts:profile', username)
     return redirect('posts:profile', username)
 
 

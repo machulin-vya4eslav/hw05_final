@@ -6,7 +6,7 @@
 {% block content %}
   <div class="container py-5">     
     <h1>Последние обновления на сайте</h1>
-    {% include 'includes/switcher.html' %}
+    {% include 'includes/switcher.html' with index=True%}
       {% for post in page_obj %}
         {% include 'includes/post_content.html' with show_author_link=True %}
       {% endfor %}

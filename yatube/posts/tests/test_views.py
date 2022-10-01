@@ -1,9 +1,11 @@
 import shutil
 import tempfile
+
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client, override_settings
 from django.core.cache import cache
+
 from ..models import Post, Group, User, Follow
 from ..forms import PostForm
 from ..utils import POSTS_ON_PAGE
@@ -193,11 +195,12 @@ class PostsURLTests(TestCase):
         response = self.authorized_client.get(PostsURLTests.url_index)
 
         obj_before_del = response.context['page_obj'][0]
+        content_before_del = response.content
         Post.objects.filter(id=obj_before_del.id).delete()
 
         response = self.authorized_client.get(PostsURLTests.url_index)
-        obj_after_del = response.context['page_obj'][0]
-        self.assertEqual(obj_before_del, obj_after_del)
+        content_after_del = response.content
+        self.assertEqual(content_after_del, content_before_del)
 
         cache.clear()
         response = self.authorized_client.get(PostsURLTests.url_index)
