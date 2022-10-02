@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client, override_settings
 from django.core.cache import cache
 
-from ..models import Post, Group, User, Follow
+from ..models import Post, Group, User, Follow, Comment
 from ..forms import PostForm
 from ..utils import POSTS_ON_PAGE
 
@@ -76,6 +76,7 @@ class PostsURLTests(TestCase):
         cls.url_follow_index = '/follow/'
         cls.url_follow = f'/profile/{cls.user}/follow/'
         cls.url_unfollow = f'/profile/{cls.user}/unfollow/'
+        cls.url_add_comment = f'/posts/{cls.post.pk}/comment/'
 
         cls.all_urls = (
             cls.url_index,
@@ -122,6 +123,8 @@ class PostsURLTests(TestCase):
     def setUp(self):
         cache.clear()
 
+        self.guest_client = Client()
+
         self.authorized_client = Client()
         self.authorized_client.force_login(PostsURLTests.user)
 
@@ -154,10 +157,6 @@ class PostsURLTests(TestCase):
                 self.assertEqual(object.image, PostsURLTests.post.image)
 
         response = self.authorized_client.get(PostsURLTests.url_group_list2)
-        objects = response.context['page_obj']
-        self.assertEqual(len(objects), 0)
-
-        response = self.user_not_follower.get(PostsURLTests.url_follow_index)
         objects = response.context['page_obj']
         self.assertEqual(len(objects), 0)
 
@@ -228,3 +227,62 @@ class PostsURLTests(TestCase):
                 )
             ), 1
         )
+
+    def test_following_list(self):
+        """
+        Все новые записи пользователя появляются
+        в ленте только его подписчиков
+        """
+        posts_on_second_page = Post.objects.count() - POSTS_ON_PAGE
+        page_posts = [(1, POSTS_ON_PAGE), (2, posts_on_second_page)]
+
+        for page, posts in page_posts:
+            with self.subTest(page=page):
+                response = self.user_follower.get(
+                    PostsURLTests.url_follow_index, {'page': page}
+                )
+                posts_on_page = len(response.context['page_obj'])
+                self.assertEqual(posts_on_page, posts)
+                cache.clear()
+
+        response = self.user_not_follower.get(PostsURLTests.url_follow_index)
+        objects = response.context['page_obj']
+        self.assertEqual(len(objects), 0)
+
+    def test_create_comment_anonymous(self):
+        """Авторизованный пользователь не может создать запись в Comment."""
+        comments_count = Comment.objects.count()
+
+        form_data = {
+            'text': 'Тестовый комментарий',
+        }
+
+        self.authorized_client.post(
+            PostsURLTests.url_add_comment,
+            data=form_data,
+            follow=True
+        )
+
+        self.assertEqual(Comment.objects.count(), comments_count + 1)
+        self.assertTrue(
+            Comment.objects.filter(
+                text=form_data['text'],
+                post=PostsURLTests.post.id
+            )
+        )
+
+    def test_create_comment_anonymous(self):
+        """Неавторизованный пользователь не может создать запись в Comment."""
+        comments_count = Comment.objects.count()
+
+        form_data = {
+            'text': 'Тестовый комментарий',
+        }
+
+        self.guest_client.post(
+            PostsURLTests.url_add_comment,
+            data=form_data,
+            follow=True
+        )
+
+        self.assertNotEqual(Comment.objects.count(), comments_count + 1)

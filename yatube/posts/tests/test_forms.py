@@ -164,7 +164,7 @@ class CommentCreateTests(TestCase):
         self.assertTrue(
             Comment.objects.filter(
                 text=form_data['text'],
-            ).exists
+            )
         )
 
     def test_create_comment_anonymous(self):
