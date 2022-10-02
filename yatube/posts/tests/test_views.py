@@ -249,8 +249,8 @@ class PostsURLTests(TestCase):
         objects = response.context['page_obj']
         self.assertEqual(len(objects), 0)
 
-    def test_create_comment_anonymous(self):
-        """Авторизованный пользователь не может создать запись в Comment."""
+    def test_create_comment(self):
+        """Авторизованный пользователь может создать запись в Comment."""
         comments_count = Comment.objects.count()
 
         form_data = {
