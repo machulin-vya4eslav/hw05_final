@@ -1,4 +1,5 @@
 from http import HTTPStatus
+import time
 
 from django.test import TestCase, Client
 from django.core.cache import cache
@@ -38,7 +39,7 @@ class PostsURLTests(TestCase):
 
         cls.private_urls = (
             cls.url_post_create,
-            cls.url_post_edit
+            cls.url_post_edit,
         )
 
         cls.urls_template = [

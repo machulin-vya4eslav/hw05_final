@@ -10,7 +10,7 @@ from .utils import get_page_context
 TIME_OF_CACHE = 20
 
 
-@cache_page(20, key_prefix='index_page')
+@cache_page(TIME_OF_CACHE, key_prefix='index_page')
 def index(request):
     post_list = Post.objects.all()
     page_obj = get_page_context(post_list, request)
@@ -44,10 +44,10 @@ def profile(request, username):
         'author': author
     }
 
-    if request.user.is_authenticated:
-        context.update(
-            following=Follow.objects.filter(user=request.user, author=author)
-        )
+    context.update(
+        following=request.user.is_authenticated
+        and Follow.objects.filter(user=request.user, author=author).exists()
+    )
 
     return render(request, 'posts/profile.html', context)
 
@@ -81,7 +81,10 @@ def add_comment(request, post_id):
 @login_required
 def post_create(request):
     is_edit = False
-    form = PostForm(request.POST or None)
+    form = PostForm(
+        request.POST or None,
+        files=request.FILES or None
+    )
 
     if form.is_valid():
         post = form.save(commit=False)
@@ -144,7 +147,7 @@ def profile_follow(request, username):
 @login_required
 def profile_unfollow(request, username):
     if request.user.get_username() != username:
-        Follow.objects.get(
+        Follow.objects.filter(
             user=request.user,
             author=User.objects.get(username=username)
         ).delete()

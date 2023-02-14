@@ -52,7 +52,7 @@ class PostCreateFormTests(TestCase):
         """Валидная форма создает запись в Post."""
         posts_count = Post.objects.count()
         form_data = {
-            'text': 'Тестовый пост',
+            'text': 'Тестовый пост1111',
             'group': PostCreateFormTests.group.id,
             'image': PostCreateFormTests.uploaded
         }
@@ -68,9 +68,9 @@ class PostCreateFormTests(TestCase):
             Post.objects.filter(
                 text=form_data['text'],
                 group=form_data['group'],
-                image=form_data['image']
-            ).exists
+            ).exists()
         )
+        self.assertTrue(form_data['image'], Post.objects.latest('pk').image)
 
     def test_edit_post(self):
         """Валидная форма редактирует запись в Post."""
